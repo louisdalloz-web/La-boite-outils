@@ -4,7 +4,6 @@ import io
 from dataclasses import dataclass
 from datetime import date
 from typing import Iterable
-
 import pandas as pd
 
 from core.utils import to_cents
