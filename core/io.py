@@ -38,6 +38,27 @@ def detect_separator(sample: str) -> str:
     return ";" if sample.count(";") >= sample.count(",") else ","
 
 
+def _decode_sample(raw: bytes) -> str:
+    for encoding in ("utf-8", "latin-1", "cp1252"):
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", errors="ignore")
+
+
+def _read_csv_with_fallback(raw: bytes, sep: str) -> pd.DataFrame:
+    last_error: Exception | None = None
+    for encoding in ("utf-8", "latin-1", "cp1252"):
+        try:
+            return pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str, encoding=encoding)
+        except UnicodeDecodeError as exc:
+            last_error = exc
+    if last_error:
+        raise last_error
+    return pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str)
+
+
 def _validate_columns(columns: Iterable[str]) -> list[str]:
     missing = [col for col in REQUIRED_COLUMNS if col not in columns]
     return missing
@@ -49,9 +70,9 @@ def load_csv(file: io.BytesIO | str) -> ParsedData:
     else:
         with open(file, "rb") as handle:
             raw = handle.read()
-    sample = raw.decode("utf-8", errors="ignore").splitlines()[0]
+    sample = _decode_sample(raw).splitlines()[0]
     sep = detect_separator(sample)
-    df = pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str)
+    df = _read_csv_with_fallback(raw, sep=sep)
     missing = _validate_columns(df.columns)
     if missing:
         raise ValueError(
