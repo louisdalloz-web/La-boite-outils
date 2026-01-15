@@ -10,7 +10,7 @@ class ToolSettings:
     max_lignes_par_tiers: int = 200
     autoriser_multi_rc: bool = True
     max_rc_par_lettrage: int = 2
-    max_candidats_par_rc: int = 500
+    max_candidats_par_rc: int = 10
 
 
 DEFAULT_SETTINGS = ToolSettings()
